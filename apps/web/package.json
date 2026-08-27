@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@rde/theme": "workspace:*",
+    "@rde/types": "workspace:*",
+    "@rde/ui": "workspace:*",
     "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
