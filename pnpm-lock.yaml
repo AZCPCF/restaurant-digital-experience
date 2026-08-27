@@ -23,6 +23,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@rde/menu-engine':
+        specifier: workspace:*
+        version: link:../../packages/menu-engine
       '@rde/theme':
         specifier: workspace:*
         version: link:../../packages/theme
@@ -95,6 +98,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@rde/menu-engine':
+        specifier: workspace:*
+        version: link:../../packages/menu-engine
       '@rde/theme':
         specifier: workspace:*
         version: link:../../packages/theme
@@ -141,6 +147,12 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/menu-engine:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   packages/theme: {}
 

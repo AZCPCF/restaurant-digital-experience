@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rde/menu-engine": "workspace:*",
     "@rde/theme": "workspace:*",
     "@rde/types": "workspace:*",
     "@rde/ui": "workspace:*",
