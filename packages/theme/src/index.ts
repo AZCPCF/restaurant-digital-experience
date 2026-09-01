@@ -1,55 +1,18 @@
-export type RestaurantTheme = {
-  colors: {
-    primary: string;
-    secondary: string;
-    background: string;
-    surface: string;
-    foreground: string;
-    muted: string;
-    border: string;
-  };
+export type { Theme, ThemeOverrides } from "./types";
 
-  typography: {
-    headingFont: string;
-    bodyFont: string;
-  };
+export type {
+  ThemeColors,
+  ThemeTypography,
+  ThemeSpacing,
+  ThemeRadius,
+  ThemeShadows,
+  ThemeTokens,
+} from "./types";
 
-  radius: {
-    sm: string;
-    md: string;
-    lg: string;
-  };
+export { defaultTheme } from "./presets";
 
-  layout: {
-    contentWidth: string;
-    spacingScale: number;
-  };
-};
+export { resolveTheme } from "./resolver";
 
-export const defaultTheme: RestaurantTheme = {
-  colors: {
-    primary: "#111827",
-    secondary: "#6b7280",
-    background: "#ffffff",
-    surface: "#f9fafb",
-    foreground: "#111827",
-    muted: "#6b7280",
-    border: "#e5e7eb",
-  },
+export { themeToCssVariables } from "./css";
 
-  typography: {
-    headingFont: "system-ui",
-    bodyFont: "system-ui",
-  },
-
-  radius: {
-    sm: "0.375rem",
-    md: "0.5rem",
-    lg: "0.75rem",
-  },
-
-  layout: {
-    contentWidth: "1200px",
-    spacingScale: 1,
-  },
-};
+export * from "./color";
