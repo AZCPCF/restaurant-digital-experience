@@ -1,6 +1,59 @@
 @import "tailwindcss";
 @source "../../../packages/ui/src";
 
+@theme inline {
+  --color-primary-50: var(--rde-color-primary-50);
+  --color-primary-100: var(--rde-color-primary-100);
+  --color-primary-200: var(--rde-color-primary-200);
+  --color-primary-300: var(--rde-color-primary-300);
+  --color-primary-400: var(--rde-color-primary-400);
+  --color-primary-500: var(--rde-color-primary-500);
+  --color-primary-600: var(--rde-color-primary-600);
+  --color-primary-700: var(--rde-color-primary-700);
+  --color-primary-800: var(--rde-color-primary-800);
+  --color-primary-900: var(--rde-color-primary-900);
+  --color-primary-950: var(--rde-color-primary-950);
+
+  --color-secondary-50: var(--rde-color-secondary-50);
+  --color-secondary-100: var(--rde-color-secondary-100);
+  --color-secondary-200: var(--rde-color-secondary-200);
+  --color-secondary-300: var(--rde-color-secondary-300);
+  --color-secondary-400: var(--rde-color-secondary-400);
+  --color-secondary-500: var(--rde-color-secondary-500);
+  --color-secondary-600: var(--rde-color-secondary-600);
+  --color-secondary-700: var(--rde-color-secondary-700);
+  --color-secondary-800: var(--rde-color-secondary-800);
+  --color-secondary-900: var(--rde-color-secondary-900);
+  --color-secondary-950: var(--rde-color-secondary-950);
+  --color-background: var(--rde-color-background);
+  --color-surface: var(--rde-color-surface);
+
+  --color-text: var(--rde-color-text);
+  --color-text-muted: var(--rde-color-text-muted);
+
+  --color-border: var(--rde-color-border);
+
+  --color-success: var(--rde-color-success);
+  --color-warning: var(--rde-color-warning);
+  --color-danger: var(--rde-color-danger);
+
+  --font-family: var(--rde-font-family);
+
+  --spacing-xs: var(--rde-space-xs);
+  --spacing-sm: var(--rde-space-sm);
+  --spacing-md: var(--rde-space-md);
+  --spacing-lg: var(--rde-space-lg);
+  --spacing-xl: var(--rde-space-xl);
+
+  --radius-sm: var(--rde-radius-sm);
+  --radius-md: var(--rde-radius-md);
+  --radius-lg: var(--rde-radius-lg);
+  --radius-full: var(--rde-radius-full);
+
+  --shadow-sm: var(--rde-shadow-sm);
+  --shadow-md: var(--rde-shadow-md);
+  --shadow-lg: var(--rde-shadow-lg);
+}
 
 :root {
   --text: #6b6375;
@@ -15,8 +68,8 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -58,6 +111,7 @@
   width: 1126px;
   max-width: 100%;
   margin: 0 auto;
+  background-color: oklab(62.793% 0.22489 0.1258);
   text-align: center;
   border-inline: 1px solid var(--border);
   min-height: 100svh;
