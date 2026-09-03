@@ -4,8 +4,4 @@ export class CreateRestaurantDto {
   @IsNotEmpty()
   @MinLength(4)
   name: string;
-
-  @IsNotEmpty()
-  @MinLength(4)
-  slug: string;
 }

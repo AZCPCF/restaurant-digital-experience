@@ -5,14 +5,16 @@ import { CreateRestaurantDto } from './dto/create-restaurant.dto.js';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto.js';
 import { RestaurantEntity } from './entities/restaurant.entity.js';
 import { RestaurantRepository } from './repositories/restaurant.repository.js';
+import slug from 'slug';
 
 @Injectable()
 export class RestaurantsService {
   constructor(private readonly restaurantRepository: RestaurantRepository) {}
-  async create(
-    createRestaurantDto: CreateRestaurantDto,
-  ): Promise<RestaurantEntity> {
-    return this.restaurantRepository.create(createRestaurantDto);
+  async create({ name }: CreateRestaurantDto): Promise<RestaurantEntity> {
+    return this.restaurantRepository.create({
+      name,
+      slug: slug(name),
+    });
   }
 
   async findAll(
@@ -30,11 +32,14 @@ export class RestaurantsService {
 
   async update(
     id: string,
-    updateRestaurantDto: UpdateRestaurantDto,
+    { name }: UpdateRestaurantDto,
   ): Promise<RestaurantEntity | null> {
     return this.restaurantRepository.update(
       { id: { operator: 'eq', value: id } },
-      updateRestaurantDto,
+      {
+        name,
+        ...(name ? { slug: slug(name) } : {}),
+      },
     );
   }
 

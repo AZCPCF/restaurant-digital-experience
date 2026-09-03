@@ -1,7 +1,8 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import slug from 'slug';
 import { Mock } from 'vitest';
 import { RestaurantRepository } from './repositories/restaurant.repository.js';
 import { RestaurantsService } from './restaurants.service.js';
-import { Test, TestingModule } from '@nestjs/testing';
 
 describe('RestaurantsService', () => {
   let service: RestaurantsService;
@@ -41,18 +42,21 @@ describe('RestaurantsService', () => {
   });
 
   describe('create', () => {
-    it('should create a restaurant', async () => {
-      const dto = { name: 'Test Restaurant', slug: 'test-restaurant' };
-
-      restaurantRepositoryMock.create.mockResolvedValue(dto);
+    it('should create a restaurant with generated slug', async () => {
+      const dto = { name: 'Test Restaurant' };
+      const data = {
+        name: dto.name,
+        slug: slug(dto.name),
+      };
+      restaurantRepositoryMock.create.mockResolvedValue(data);
 
       const result = await service.create(dto);
 
       expect(restaurantRepositoryMock.create).toHaveBeenCalledExactlyOnceWith(
-        dto,
+        data,
       );
 
-      expect(result).toEqual(dto);
+      expect(result).toEqual(data);
     });
   });
 
@@ -102,18 +106,18 @@ describe('RestaurantsService', () => {
   describe('update', () => {
     it('should update restaurant', async () => {
       const dto = {
-        name: 'Updated',
+        name: 'Updated Res',
       };
 
       const restaurant = {
         id: 'r-1',
-        name: 'Updated',
+        name: dto.name,
+        slug: slug(dto.name),
       };
 
       restaurantRepositoryMock.update.mockResolvedValue(restaurant);
 
       const result = await service.update('r-1', dto);
-
       expect(restaurantRepositoryMock.update).toHaveBeenCalledExactlyOnceWith(
         {
           id: {
@@ -121,7 +125,7 @@ describe('RestaurantsService', () => {
             value: 'r-1',
           },
         },
-        dto,
+        { ...dto, slug: slug(dto.name) },
       );
 
       expect(result).toEqual(restaurant);
