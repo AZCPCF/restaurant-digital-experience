@@ -66,13 +66,13 @@ export abstract class BaseRepository<T extends BaseEntity> {
     });
   }
 
-  async insert(entity: Omit<T, keyof BaseEntity>): Promise<T> {
+  async create(entity: Omit<T, keyof BaseEntity>): Promise<T> {
     const entityInstance = this.repository.create(entity as DeepPartial<T>);
 
     return this.repository.save(entityInstance);
   }
 
-  async insertMany(entities: Omit<T, keyof BaseEntity>[]): Promise<T[]> {
+  async createMany(entities: Omit<T, keyof BaseEntity>[]): Promise<T[]> {
     const entityInstances = entities.map((entity) =>
       this.repository.create(entity as DeepPartial<T>),
     );
