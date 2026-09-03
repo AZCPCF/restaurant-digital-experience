@@ -17,7 +17,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     protected readonly filterMapper: FilterMapper<T>,
   ) {}
 
-  async getAll(options: QueryOptions<T> = {}): Promise<QueryResult<T>> {
+  async findAll(options: QueryOptions<T> = {}): Promise<QueryResult<T>> {
     const {
       pagination = {
         page: 1,
@@ -46,7 +46,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     };
   }
 
-  async getById(
+  async findOne(
     id: string,
     options: Omit<QueryOptions<T>, 'pagination' | 'sorting'> = {},
   ): Promise<T | null> {
