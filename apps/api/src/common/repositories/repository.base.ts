@@ -115,7 +115,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     return this.repository.save(entities);
   }
 
-  async delete(filter: Filter<T>): Promise<T | null> {
+  async remove(filter: Filter<T>): Promise<T | null> {
     const entity = await this.repository.findOne({
       where: this.filterMapper.toWhere(filter),
     });
@@ -127,7 +127,7 @@ export abstract class BaseRepository<T extends BaseEntity> {
     return this.repository.remove(entity);
   }
 
-  async deleteMany(filter: Filter<T>): Promise<T[]> {
+  async removeMany(filter: Filter<T>): Promise<T[]> {
     const entities = await this.repository.find({
       where: this.filterMapper.toWhere(filter),
     });
