@@ -1,13 +1,20 @@
+import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({
+  path: '.env.test',
+  override: true,
+});
 import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   // Resolves the path aliases declared in tsconfig.json, including the ones
   // added by `nest g library`.
-  plugins: [tsconfigPaths()],
   test: {
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    env: {
+      NODE_ENV: 'test',
+    },
   },
 });

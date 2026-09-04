@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueryOptions } from '../../common/query/query-options.js';
 import { QueryResult } from '../../common/query/query-result.js';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto.js';
@@ -26,26 +26,42 @@ export class RestaurantsService {
   async findOne(
     id: string,
     options?: QueryOptions<RestaurantEntity>,
-  ): Promise<RestaurantEntity | null> {
-    return this.restaurantRepository.findOne(id, options);
+  ): Promise<RestaurantEntity> {
+    const restaurant = await this.restaurantRepository.findOne(id, options);
+    if (!restaurant) {
+      throw new NotFoundException();
+    }
+    return restaurant;
   }
 
   async update(
     id: string,
     { name }: UpdateRestaurantDto,
-  ): Promise<RestaurantEntity | null> {
-    return this.restaurantRepository.update(
+  ): Promise<RestaurantEntity> {
+    const restaurant = await this.restaurantRepository.update(
       { id: { operator: 'eq', value: id } },
       {
         name,
         ...(name ? { slug: slug(name) } : {}),
       },
     );
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant with id ${id} not found`);
+    }
+
+    return restaurant;
   }
 
-  async remove(id: string): Promise<RestaurantEntity | null> {
-    return this.restaurantRepository.remove({
+  async remove(id: string): Promise<RestaurantEntity> {
+    const restaurant = await this.restaurantRepository.remove({
       id: { operator: 'eq', value: id },
     });
+
+    if (!restaurant) {
+      throw new NotFoundException(`Restaurant with id ${id} not found`);
+    }
+
+    return restaurant;
   }
 }

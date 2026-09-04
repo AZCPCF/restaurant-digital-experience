@@ -1,11 +1,19 @@
+import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({
+  path: '.env.test',
+  override: true,
+});
+
 import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
   test: {
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    env: {
+      NODE_ENV: 'test',
+    },
   },
 });
