@@ -14,6 +14,7 @@ export default new DataSource({
   port: Number(process.env.DB_PORT),
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
+  logging: ['query', 'error'],
   database: process.env.DB_DATABASE,
 
   entities: [__dirname + '/../modules/**/entities/*.entity{.ts,.js}'],

@@ -31,10 +31,10 @@ describe('FilterMapper', () => {
   describe('toWhere', () => {
     it('should map eq operator', () => {
       const result = mapper.toWhere({
-        name: {
+        name: [{
           operator: 'eq',
           value: 'Restaurant',
-        },
+        }],
       });
 
       expect(result.name).toEqual(Equal('Restaurant'));
@@ -42,10 +42,10 @@ describe('FilterMapper', () => {
 
     it('should map neq operator', () => {
       const result = mapper.toWhere({
-        name: {
+        name: [{
           operator: 'neq',
           value: 'Restaurant',
-        },
+        }],
       });
 
       expect(result.name).toEqual(Not(Equal('Restaurant')));
@@ -53,10 +53,10 @@ describe('FilterMapper', () => {
 
     it('should map gt operator', () => {
       const result = mapper.toWhere({
-        age: {
+        age: [{
           operator: 'gt',
           value: 18,
-        },
+        }],
       });
 
       expect(result.age).toEqual(MoreThan(18));
@@ -64,10 +64,10 @@ describe('FilterMapper', () => {
 
     it('should map gte operator', () => {
       const result = mapper.toWhere({
-        age: {
+        age: [{
           operator: 'gte',
           value: 18,
-        },
+        }],
       });
 
       expect(result.age).toEqual(MoreThanOrEqual(18));
@@ -75,10 +75,10 @@ describe('FilterMapper', () => {
 
     it('should map lt operator', () => {
       const result = mapper.toWhere({
-        age: {
+        age:[ {
           operator: 'lt',
           value: 18,
-        },
+        }],
       });
 
       expect(result.age).toEqual(LessThan(18));
@@ -86,10 +86,12 @@ describe('FilterMapper', () => {
 
     it('should map lte operator', () => {
       const result = mapper.toWhere({
-        age: {
-          operator: 'lte',
-          value: 18,
-        },
+        age: [
+          {
+            operator: 'lte',
+            value: 18,
+          },
+        ],
       });
 
       expect(result.age).toEqual(LessThanOrEqual(18));
@@ -97,10 +99,12 @@ describe('FilterMapper', () => {
 
     it('should map in operator', () => {
       const result = mapper.toWhere({
-        age: {
-          operator: 'in',
-          value: [18, 20, 25],
-        },
+        age: [
+          {
+            operator: 'in',
+            value: [18, 20, 25],
+          },
+        ],
       });
 
       expect(result.age).toEqual(In([18, 20, 25]));
@@ -108,10 +112,12 @@ describe('FilterMapper', () => {
 
     it('should map like operator', () => {
       const result = mapper.toWhere({
-        name: {
-          operator: 'like',
-          value: '%restaurant%',
-        },
+        name: [
+          {
+            operator: 'like',
+            value: 'restaurant',
+          },
+        ],
       });
 
       expect(result.name).toEqual(Like('%restaurant%'));
@@ -119,14 +125,18 @@ describe('FilterMapper', () => {
 
     it('should map multiple filters', () => {
       const result = mapper.toWhere({
-        name: {
-          operator: 'eq',
-          value: 'Restaurant',
-        },
-        age: {
-          operator: 'gte',
-          value: 18,
-        },
+        name: [
+          {
+            operator: 'eq',
+            value: 'Restaurant',
+          },
+        ],
+        age: [
+          {
+            operator: 'gte',
+            value: 18,
+          },
+        ],
       });
 
       expect(result).toEqual({

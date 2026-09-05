@@ -1,4 +1,5 @@
 import {
+  And,
   Equal,
   FindOptionsWhere,
   In,
@@ -9,14 +10,22 @@ import {
   MoreThanOrEqual,
   Not,
 } from 'typeorm';
+
 import { BaseEntity } from '../entities/base.entity.js';
 import { Filter, FilterCondition } from './filter.js';
 
 export class FilterMapper<T extends BaseEntity> {
   toWhere(filter: Filter<T>): FindOptionsWhere<T> {
-    const entries = Object.entries(filter).map(
-      ([key, condition]) => [key, this.toFindOperator(condition)] as const,
-    );
+    const entries = Object.entries(filter).map(([key, conditions]) => {
+      const operators = (conditions as FilterCondition<unknown>[]).map(
+        (condition) => this.toFindOperator(condition),
+      );
+
+      return [
+        key,
+        operators.length === 1 ? operators[0] : And(...operators),
+      ] as const;
+    });
 
     return Object.fromEntries(entries) as FindOptionsWhere<T>;
   }
@@ -45,7 +54,7 @@ export class FilterMapper<T extends BaseEntity> {
         return In(condition.value);
 
       case 'like':
-        return Like(condition.value);
+        return Like(`%${condition.value}%`);
     }
   }
 }

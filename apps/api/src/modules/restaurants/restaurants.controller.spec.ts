@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Mock } from 'vitest';
+import slug from 'slug';
 
 import { RestaurantsController } from './restaurants.controller.js';
 import { RestaurantsService } from './restaurants.service.js';
+import { RestaurantQueryMapper } from './repositories/restaurant.query-mapper.js';
 
 describe('RestaurantsController', () => {
   let controller: RestaurantsController;
@@ -15,6 +17,10 @@ describe('RestaurantsController', () => {
     remove: Mock;
   };
 
+  let queryMapperMock: {
+    toOptions: Mock;
+  };
+
   beforeEach(async () => {
     restaurantsServiceMock = {
       create: vitest.fn(),
@@ -24,12 +30,20 @@ describe('RestaurantsController', () => {
       remove: vitest.fn(),
     };
 
+    queryMapperMock = {
+      toOptions: vitest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RestaurantsController],
       providers: [
         {
           provide: RestaurantsService,
           useValue: restaurantsServiceMock,
+        },
+        {
+          provide: RestaurantQueryMapper,
+          useValue: queryMapperMock,
         },
       ],
     }).compile();
@@ -45,10 +59,15 @@ describe('RestaurantsController', () => {
     it('should create a restaurant', async () => {
       const dto = {
         name: 'Test Restaurant',
-        slug: 'Test Restaurant Slug',
       };
 
-      restaurantsServiceMock.create.mockResolvedValue(dto);
+      const restaurant = {
+        id: 'r-1',
+        name: dto.name,
+        slug: slug(dto.name),
+      };
+
+      restaurantsServiceMock.create.mockResolvedValue(restaurant);
 
       const result = await controller.create(dto);
 
@@ -56,12 +75,74 @@ describe('RestaurantsController', () => {
         dto,
       );
 
-      expect(result).toEqual(dto);
+      expect(result).toEqual(restaurant);
     });
   });
 
   describe('findAll', () => {
-    it('should return all restaurants', async () => {
+    it('should map query and return restaurants', async () => {
+      const query = {
+        page: 2,
+        limit: 10,
+        sort: 'name:DESC',
+        filter: {
+          name: {
+            like: 'Garden',
+          },
+        },
+      };
+
+      const options = {
+        pagination: {
+          page: 2,
+          limit: 10,
+        },
+        sorting: {
+          name: 'DESC',
+        },
+        filter: {
+          name: [
+            {
+              operator: 'like',
+              value: 'Garden',
+            },
+          ],
+        },
+      };
+
+      const data = {
+        data: [],
+        page: 2,
+        limit: 10,
+        pages: 0,
+        total: 0,
+        hasNext: false,
+      };
+
+      queryMapperMock.toOptions.mockReturnValue(options);
+      restaurantsServiceMock.findAll.mockResolvedValue(data);
+
+      const result = await controller.findAll(query);
+
+      expect(queryMapperMock.toOptions).toHaveBeenCalledExactlyOnceWith(query);
+
+      expect(restaurantsServiceMock.findAll).toHaveBeenCalledExactlyOnceWith(
+        options,
+      );
+
+      expect(result).toEqual(data);
+    });
+
+    it('should use mapped default options when query is empty', async () => {
+      const query = {};
+
+      const options = {
+        pagination: {
+          page: 1,
+          limit: 20,
+        },
+      };
+
       const data = {
         data: [],
         page: 1,
@@ -71,11 +152,16 @@ describe('RestaurantsController', () => {
         hasNext: false,
       };
 
+      queryMapperMock.toOptions.mockReturnValue(options);
       restaurantsServiceMock.findAll.mockResolvedValue(data);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(query);
 
-      expect(restaurantsServiceMock.findAll).toHaveBeenCalledExactlyOnceWith();
+      expect(queryMapperMock.toOptions).toHaveBeenCalledExactlyOnceWith(query);
+
+      expect(restaurantsServiceMock.findAll).toHaveBeenCalledExactlyOnceWith(
+        options,
+      );
 
       expect(result).toEqual(data);
     });
@@ -84,17 +170,17 @@ describe('RestaurantsController', () => {
   describe('findOne', () => {
     it('should return a restaurant by id', async () => {
       const data = {
-        id: 'test',
+        id: 'r-1',
         name: 'Test Restaurant',
-        slug: 'Test Restaurant Slug',
+        slug: slug('Test Restaurant'),
       };
 
       restaurantsServiceMock.findOne.mockResolvedValue(data);
 
-      const result = await controller.findOne('test');
+      const result = await controller.findOne('r-1');
 
       expect(restaurantsServiceMock.findOne).toHaveBeenCalledExactlyOnceWith(
-        'test',
+        'r-1',
       );
 
       expect(result).toEqual(data);
@@ -103,28 +189,22 @@ describe('RestaurantsController', () => {
 
   describe('update', () => {
     it('should update a restaurant', async () => {
-      const data = {
-        id: 'test',
-        name: 'Test Restaurant',
-        slug: 'Test Restaurant Slug',
-      };
-
       const updateDto = {
-        name: 'TEST_UPDATE',
-        slug: 'TEST_UPDATE_SLUG',
+        name: 'Updated Restaurant',
       };
 
       const updatedRestaurant = {
-        ...data,
-        ...updateDto,
+        id: 'r-1',
+        name: updateDto.name,
+        slug: slug(updateDto.name),
       };
 
       restaurantsServiceMock.update.mockResolvedValue(updatedRestaurant);
 
-      const result = await controller.update('test', updateDto);
+      const result = await controller.update('r-1', updateDto);
 
       expect(restaurantsServiceMock.update).toHaveBeenCalledExactlyOnceWith(
-        'test',
+        'r-1',
         updateDto,
       );
 
@@ -134,21 +214,21 @@ describe('RestaurantsController', () => {
 
   describe('remove', () => {
     it('should remove a restaurant', async () => {
-      const data = {
-        id: 'test',
+      const restaurant = {
+        id: 'r-1',
         name: 'Test Restaurant',
-        slug: 'Test Restaurant Slug',
+        slug: slug('Test Restaurant'),
       };
 
-      restaurantsServiceMock.remove.mockResolvedValue(data);
+      restaurantsServiceMock.remove.mockResolvedValue(restaurant);
 
-      const result = await controller.remove('test');
+      const result = await controller.remove('r-1');
 
       expect(restaurantsServiceMock.remove).toHaveBeenCalledExactlyOnceWith(
-        'test',
+        'r-1',
       );
 
-      expect(result).toEqual(data);
+      expect(result).toEqual(restaurant);
     });
   });
 });

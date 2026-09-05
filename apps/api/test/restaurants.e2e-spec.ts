@@ -24,6 +24,8 @@ describe('Restaurants (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
 
+    app.getHttpAdapter().getInstance().set('query parser', 'extended');
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -94,6 +96,138 @@ describe('Restaurants (e2e)', () => {
       await request(app.getHttpServer())
         .get(`/restaurants/${crypto.randomUUID()}`)
         .expect(404);
+    });
+    it('should filter restaurants by name with eq operator', async () => {
+      const dataSource = app.get(DataSource);
+      await dataSource
+        .getRepository(RestaurantEntity)
+        .save([
+          createRestaurantDto('Garden Restaurant'),
+          createRestaurantDto('Test Restaurant'),
+        ]);
+      const response = await request(app.getHttpServer())
+        .get('/restaurants?filter[name][eq]=Garden%20Restaurant')
+        .expect(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].name).toBe('Garden Restaurant');
+    });
+    it('should filter restaurants by name with like operator', async () => {
+      const dataSource = app.get(DataSource);
+      await dataSource
+        .getRepository(RestaurantEntity)
+        .save([
+          createRestaurantDto('Garden Restaurant'),
+          createRestaurantDto('Beautiful Garden Cafe'),
+          createRestaurantDto('Test Restaurant'),
+        ]);
+      const response = await request(app.getHttpServer())
+        .get('/restaurants?filter[name][like]=Garden')
+        .expect(200);
+      expect(response.body.data).toHaveLength(2);
+      expect(
+        response.body.data.every((restaurant: RestaurantEntity) =>
+          restaurant.name.includes('Garden'),
+        ),
+      ).toBe(true);
+    });
+    it('should filter restaurants by created_at range', async () => {
+      const dataSource = app.get(DataSource);
+      const repository = dataSource.getRepository(RestaurantEntity);
+      await repository.save([
+        {
+          ...createRestaurantDto('Old Restaurant'),
+          created_at: new Date('2026-08-01T00:00:00.000Z'),
+        },
+        {
+          ...createRestaurantDto('September Restaurant'),
+          created_at: new Date('2026-09-03T00:00:00.000Z'),
+        },
+        {
+          ...createRestaurantDto('New Restaurant'),
+          created_at: new Date('2026-09-10T00:00:00.000Z'),
+        },
+      ]);
+      const response = await request(app.getHttpServer())
+        .get(
+          '/restaurants?filter[created_at][gte]=2026-09-01&filter[created_at][lte]=2026-09-05',
+        )
+        .expect(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].name).toBe('September Restaurant');
+    });
+    it('should filter restaurants by multiple fields', async () => {
+      const dataSource = app.get(DataSource);
+      await dataSource
+        .getRepository(RestaurantEntity)
+        .save([
+          createRestaurantDto('Garden Restaurant'),
+          createRestaurantDto('Garden Cafe'),
+          createRestaurantDto('Test Restaurant'),
+        ]);
+      const gardenRestaurant = await dataSource
+        .getRepository(RestaurantEntity)
+        .findOneBy({ name: 'Garden Restaurant' });
+      expect(gardenRestaurant).not.toBeNull();
+      const response = await request(app.getHttpServer())
+        .get(
+          `/restaurants?filter[name][like]=Garden&filter[id][eq]=${gardenRestaurant!.id}`,
+        )
+        .expect(200);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].name).toBe('Garden Restaurant');
+    });
+    it('should filter restaurants by id with in operator', async () => {
+      const dataSource = app.get(DataSource);
+      const restaurants = await dataSource
+        .getRepository(RestaurantEntity)
+        .save([
+          createRestaurantDto('Restaurant One'),
+          createRestaurantDto('Restaurant Two'),
+          createRestaurantDto('Restaurant Three'),
+        ]);
+      const ids = [restaurants[0].id, restaurants[2].id].join(',');
+      const response = await request(app.getHttpServer())
+        .get(`/restaurants?filter[id][in]=${ids}`)
+        .expect(200);
+      expect(response.body.data).toHaveLength(2);
+      expect(
+        response.body.data.map((restaurant: RestaurantEntity) => restaurant.id),
+      ).toEqual(expect.arrayContaining([restaurants[0].id, restaurants[2].id]));
+    });
+    it('should combine filter, sorting and pagination', async () => {
+      const dataSource = app.get(DataSource);
+      const repository = dataSource.getRepository(RestaurantEntity);
+      await repository.save([
+        {
+          ...createRestaurantDto('Garden Alpha'),
+          created_at: new Date('2026-09-01T00:00:00.000Z'),
+        },
+        {
+          ...createRestaurantDto('Garden Beta'),
+          created_at: new Date('2026-09-02T00:00:00.000Z'),
+        },
+        {
+          ...createRestaurantDto('Garden Gamma'),
+          created_at: new Date('2026-09-03T00:00:00.000Z'),
+        },
+        {
+          ...createRestaurantDto('Test Restaurant'),
+          created_at: new Date('2026-09-04T00:00:00.000Z'),
+        },
+      ]);
+      const response = await request(app.getHttpServer())
+        .get(
+          '/restaurants?page=1&limit=2&sort=created_at:DESC&filter[name][like]=Garden',
+        )
+        .expect(200);
+      expect(response.body.page).toBe(1);
+      expect(response.body.limit).toBe(2);
+      expect(response.body.total).toBe(3);
+      expect(response.body.pages).toBe(2);
+      expect(response.body.hasNext).toBe(true);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data[0].name).toBe('Garden Gamma');
+      expect(response.body.data[1].name).toBe('Garden Beta');
     });
   });
 

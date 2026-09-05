@@ -7,15 +7,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     instrument: ObserveInstrument,
   });
+
+  app.getHttpAdapter().getInstance().set('query parser', 'extended');
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true,
     }),
   );
   app.useGlobalFilters(new DatabaseExceptionFilter());
-  
+
   await app.listen(process.env.PORT ?? 3000);
 }
 await bootstrap();

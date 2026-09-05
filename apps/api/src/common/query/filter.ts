@@ -1,5 +1,5 @@
 export type Filter<T> = {
-  [t in keyof T]?: FilterCondition<T[t]>;
+  [K in keyof T]?: FilterCondition<T[K]>[];
 };
 
 export type FilterCondition<V> =

@@ -1,4 +1,4 @@
-import { EqualOperator, FindOperator, Repository } from 'typeorm';
+import { EqualOperator, FindOperator, Like, Repository } from 'typeorm';
 
 import { BaseEntity } from '../entities/base.entity.js';
 import { BaseRepository } from './repository.base.js';
@@ -169,10 +169,12 @@ describe('BaseRepository', () => {
 
       const result = await repository.findAll({
         filter: {
-          age: {
-            operator: 'gt',
-            value: 19,
-          },
+          age: [
+            {
+              operator: 'gt',
+              value: 19,
+            },
+          ],
         },
       });
 
@@ -275,10 +277,12 @@ describe('BaseRepository', () => {
 
       const result = await repository.findOne('r-1', {
         filter: {
-          age: {
-            operator: 'eq',
-            value: 25,
-          },
+          age: [
+            {
+              operator: 'eq',
+              value: 25,
+            },
+          ],
         },
       });
 
@@ -319,7 +323,7 @@ describe('BaseRepository', () => {
 
       const result = await repository.update(
         {
-          id: { operator: 'eq', value: data.id },
+          id: [{ operator: 'eq', value: data.id }],
         },
         { name: 'test' },
       );
@@ -343,7 +347,7 @@ describe('BaseRepository', () => {
 
       const result = await repository.update(
         {
-          id: { operator: 'eq', value: 'NULL' },
+          id: [{ operator: 'eq', value: 'NULL' }],
         },
         { name: 'test' },
       );
@@ -376,13 +380,13 @@ describe('BaseRepository', () => {
 
       const result = await repository.updateMany(
         {
-          id: { operator: 'like', value: 'r' },
+          id: [{ operator: 'like', value: 'r' }],
         },
         { name: 'UPDATED' },
       );
       expect(repositoryMock.find).toHaveBeenCalledExactlyOnceWith({
         where: {
-          id: new FindOperator('like', 'r'),
+          id: Like('%r%'),
         },
       });
 
@@ -413,7 +417,7 @@ describe('BaseRepository', () => {
 
       const result = await repository.updateMany(
         {
-          id: { operator: 'eq', value: 'EMPTY' },
+          id: [{ operator: 'eq', value: 'EMPTY' }],
         },
         { name: 'NOT_UPDATED' },
       );
@@ -434,7 +438,7 @@ describe('BaseRepository', () => {
       repositoryMock.remove.mockResolvedValue(data);
 
       const result = await repository.remove({
-        id: { operator: 'eq', value: 'r-1' },
+        id: [{ operator: 'eq', value: 'r-1' }],
       });
 
       expect(repositoryMock.findOne).toHaveBeenCalledExactlyOnceWith({
@@ -450,7 +454,7 @@ describe('BaseRepository', () => {
       repositoryMock.findOne.mockResolvedValue(null);
 
       const result = await repository.remove({
-        id: { operator: 'eq', value: 'NULL' },
+        id: [{ operator: 'eq', value: 'NULL' }],
       });
 
       expect(repositoryMock.findOne).toHaveBeenCalledExactlyOnceWith({
@@ -473,12 +477,12 @@ describe('BaseRepository', () => {
       repositoryMock.remove.mockResolvedValue(data);
 
       const result = await repository.removeMany({
-        id: { operator: 'like', value: 'r' },
+        id: [{ operator: 'like', value: 'r' }],
       });
 
       expect(repositoryMock.find).toHaveBeenCalledExactlyOnceWith({
         where: {
-          id: new FindOperator('like', 'r'),
+          id: Like('%r%'),
         },
       });
 
@@ -492,7 +496,7 @@ describe('BaseRepository', () => {
       repositoryMock.remove.mockResolvedValue([]);
 
       const result = await repository.removeMany({
-        id: { operator: 'eq', value: 'EMPTY' },
+        id: [{ operator: 'eq', value: 'EMPTY' }],
       });
 
       expect(repositoryMock.find).toHaveBeenCalledExactlyOnceWith({

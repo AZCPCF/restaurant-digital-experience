@@ -20,6 +20,7 @@ export class RestaurantsService {
   async findAll(
     options?: QueryOptions<RestaurantEntity>,
   ): Promise<QueryResult<RestaurantEntity>> {
+    console.log('23:', options?.filter?.name);
     return this.restaurantRepository.findAll(options);
   }
 
@@ -39,7 +40,7 @@ export class RestaurantsService {
     { name }: UpdateRestaurantDto,
   ): Promise<RestaurantEntity> {
     const restaurant = await this.restaurantRepository.update(
-      { id: { operator: 'eq', value: id } },
+      { id: [{ operator: 'eq', value: id }] },
       {
         name,
         ...(name ? { slug: slug(name) } : {}),
@@ -55,7 +56,7 @@ export class RestaurantsService {
 
   async remove(id: string): Promise<RestaurantEntity> {
     const restaurant = await this.restaurantRepository.remove({
-      id: { operator: 'eq', value: id },
+      id: [{ operator: 'eq', value: id }],
     });
 
     if (!restaurant) {
