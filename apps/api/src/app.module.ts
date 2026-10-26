@@ -5,6 +5,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { DatabaseModule } from './database/database.module.js';
 import { RestaurantsModule } from './modules/restaurants/restaurants.module.js';
+import { MenusModule } from './modules/menus/menus.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -30,6 +31,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
         ]),
     DatabaseModule,
     RestaurantsModule,
+    MenusModule,
   ],
   controllers: [AppController],
   providers: [AppService],
