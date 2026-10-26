@@ -2,20 +2,28 @@ import 'dotenv/config';
 
 import { DataSource } from 'typeorm';
 
+import { MenuEntity } from '../../modules/menus/entities/menu.entity.js';
 import { RestaurantEntity } from '../../modules/restaurants/entities/restaurant.entity.js';
 
 const dataSource = new DataSource({
   type: 'postgres',
+
   host: process.env.DB_HOST,
+
   port: Number(process.env.DB_PORT),
+
   username: process.env.DB_USERNAME,
+
   password: process.env.DB_PASSWORD,
+
   database: process.env.DB_DATABASE,
-  entities: [RestaurantEntity],
+
+  entities: [RestaurantEntity, MenuEntity],
+
   synchronize: false,
 });
 
-const restaurants = [
+const restaurantNames = [
   'Tehran Restaurant',
   'Shiraz Restaurant',
   'Isfahan Restaurant',
@@ -77,36 +85,112 @@ function slugify(value: string): string {
     .replace(/-+/g, '-');
 }
 
+function createDate(daysFromStart: number): Date {
+  const date = new Date('2026-01-01T12:00:00.000Z');
+
+  date.setUTCDate(date.getUTCDate() + daysFromStart);
+
+  return date;
+}
+
 async function seed() {
   await dataSource.initialize();
 
   try {
-    const repository = dataSource.getRepository(RestaurantEntity);
+    const restaurantRepository = dataSource.getRepository(RestaurantEntity);
+    const menuRepository = dataSource.getRepository(MenuEntity);
 
-    for (const name of restaurants) {
-      const slug = slugify(name);
+    /*
+     * Restaurants
+     */
+    for (let index = 0; index < restaurantNames.length; index++) {
+      const name = restaurantNames[index];
 
-      const exists = await repository.findOne({
+      const slug = `${slugify(name)}-${index + 1}`;
+
+      const exists = await restaurantRepository.findOne({
         where: { slug },
       });
 
       if (exists) {
         console.log(`↪ Already exists: ${name}`);
+
         continue;
       }
 
-      const restaurant = repository.create({
+      const restaurant = restaurantRepository.create({
         name,
         slug,
+        created_at: createDate(index * 2),
       });
 
-      await repository.save(restaurant);
+      await restaurantRepository.save(restaurant);
 
       console.log(`✓ Created: ${name}`);
     }
 
+    /*
+     * Menus
+     */
+    const savedRestaurants = await restaurantRepository.find({
+      order: {
+        created_at: 'ASC',
+      },
+    });
+
+    for (let index = 0; index < savedRestaurants.length; index++) {
+      const restaurant = savedRestaurants[index];
+
+      const menus = [
+        {
+          name: 'Main Menu',
+          slug: `main-menu-${index + 1}`,
+          description: 'Our main restaurant menu',
+          isActive: true,
+          created_at: createDate(index * 2 + 1),
+        },
+        {
+          name: 'Drinks',
+          slug: `drinks-${index + 1}`,
+          description: 'Hot and cold drinks',
+          isActive: true,
+          created_at: createDate(index * 2 + 2),
+        },
+      ];
+
+      for (const menuData of menus) {
+        const exists = await menuRepository.findOne({
+          where: {
+            restaurantId: restaurant.id,
+            slug: menuData.slug,
+          },
+        });
+
+        if (exists) {
+          console.log(
+            `↪ Already exists: ${restaurant.name} → ${menuData.name}`,
+          );
+
+          continue;
+        }
+
+        const menu = menuRepository.create({
+          name: menuData.name,
+          slug: menuData.slug,
+          description: menuData.description,
+          isActive: menuData.isActive,
+          restaurantId: restaurant.id,
+          created_at: menuData.created_at,
+        });
+
+        await menuRepository.save(menu);
+
+        console.log(`✓ Created: ${restaurant.name} → ${menuData.name}`);
+      }
+    }
+
     console.log(
-      `\nSeed completed. Total restaurants: ${await repository.count()}`,
+      `\nSeed completed. Restaurants: ${await restaurantRepository.count()}, Menus: ${await menuRepository.count()}`,
     );
   } finally {
     await dataSource.destroy();
@@ -115,5 +199,6 @@ async function seed() {
 
 seed().catch((error) => {
   console.error('Seed failed:', error);
+
   process.exit(1);
 });
