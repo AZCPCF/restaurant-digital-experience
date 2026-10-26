@@ -1,13 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 
-import { AppModule } from './../src/app.module.js';
-import { DataSource } from 'typeorm';
-import { RestaurantEntity } from '../src/modules/restaurants/entities/restaurant.entity.js';
 import slug from 'slug';
+import { DataSource } from 'typeorm';
 import { DatabaseExceptionFilter } from '../src/common/exceptions/database-exception.filter.js';
+import { MenuEntity } from '../src/modules/menus/entities/menu.entity.js';
+import { RestaurantEntity } from '../src/modules/restaurants/entities/restaurant.entity.js';
+import { AppModule } from './../src/app.module.js';
 
 const createRestaurantDto = (name = 'TEST RESTAURANT') => ({
   name,
@@ -36,16 +37,21 @@ describe('Restaurants (e2e)', () => {
 
     app.useGlobalFilters(new DatabaseExceptionFilter());
 
+  const dataSource = app.get(DataSource);
+
+  await dataSource.getRepository(MenuEntity).deleteAll();
+  await dataSource.getRepository(RestaurantEntity).deleteAll();
     await app.init();
   });
 
   afterEach(async () => {
-    const dataSource = app.get(DataSource);
+  const dataSource = app.get(DataSource);
 
-    await dataSource.getRepository(RestaurantEntity).clear();
+  await dataSource.getRepository(MenuEntity).deleteAll();
+  await dataSource.getRepository(RestaurantEntity).deleteAll();
 
-    await app.close();
-  });
+  await app.close();
+});
 
   describe('GET /restaurants', () => {
     it('should return restaurants', async () => {
@@ -68,34 +74,6 @@ describe('Restaurants (e2e)', () => {
         .expect(200);
 
       expect(response.body.data[0].name).toEqual(restaurant.name);
-    });
-  });
-
-  describe('GET /restaurants/:id', () => {
-    it('should return a restaurant by id', async () => {
-      const dataSource = app.get(DataSource);
-
-      const restaurant = await dataSource
-        .getRepository(RestaurantEntity)
-        .save(createRestaurantDto());
-
-      const response = await request(app.getHttpServer())
-        .get(`/restaurants/${restaurant.id}`)
-        .expect(200);
-
-      expect(response.body.name).toEqual(restaurant.name);
-    });
-
-    it('should return 400 for invalid UUID', async () => {
-      await request(app.getHttpServer())
-        .get('/restaurants/NOT_UUID')
-        .expect(400);
-    });
-
-    it('should return 404 when restaurant does not exist', async () => {
-      await request(app.getHttpServer())
-        .get(`/restaurants/${crypto.randomUUID()}`)
-        .expect(404);
     });
     it('should filter restaurants by name with eq operator', async () => {
       const dataSource = app.get(DataSource);
@@ -228,6 +206,34 @@ describe('Restaurants (e2e)', () => {
       expect(response.body.data).toHaveLength(2);
       expect(response.body.data[0].name).toBe('Garden Gamma');
       expect(response.body.data[1].name).toBe('Garden Beta');
+    });
+  });
+
+  describe('GET /restaurants/:id', () => {
+    it('should return a restaurant by id', async () => {
+      const dataSource = app.get(DataSource);
+
+      const restaurant = await dataSource
+        .getRepository(RestaurantEntity)
+        .save(createRestaurantDto());
+
+      const response = await request(app.getHttpServer())
+        .get(`/restaurants/${restaurant.id}`)
+        .expect(200);
+
+      expect(response.body.name).toEqual(restaurant.name);
+    });
+
+    it('should return 400 for invalid UUID', async () => {
+      await request(app.getHttpServer())
+        .get('/restaurants/NOT_UUID')
+        .expect(400);
+    });
+
+    it('should return 404 when restaurant does not exist', async () => {
+      await request(app.getHttpServer())
+        .get(`/restaurants/${crypto.randomUUID()}`)
+        .expect(404);
     });
   });
 
