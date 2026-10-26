@@ -22,6 +22,6 @@ import { RestaurantsService } from './restaurants.service.js';
 
   controllers: [RestaurantsController],
 
-  exports: [RestaurantRepository],
+  exports: [RestaurantRepository, RestaurantQueryMapper],
 })
 export class RestaurantsModule {}

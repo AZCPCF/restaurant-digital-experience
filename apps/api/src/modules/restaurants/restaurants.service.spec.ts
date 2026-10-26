@@ -1,15 +1,16 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Mock } from 'vitest';
 import slug from 'slug';
 
-import { RestaurantsController } from './restaurants.controller.js';
 import { RestaurantsService } from './restaurants.service.js';
-import { RestaurantQueryMapper } from './repositories/restaurant.query-mapper.js';
+import { RestaurantRepository } from './repositories/restaurant.repository.js';
 
-describe('RestaurantsController', () => {
-  let controller: RestaurantsController;
+describe('RestaurantsService', () => {
+  let service: RestaurantsService;
+  let restaurantRepository: RestaurantRepository;
 
-  let restaurantsServiceMock: {
+  let restaurantRepositoryMock: {
     create: Mock;
     findAll: Mock;
     findOne: Mock;
@@ -17,12 +18,15 @@ describe('RestaurantsController', () => {
     remove: Mock;
   };
 
-  let queryMapperMock: {
-    toOptions: Mock;
+  const restaurant = {
+    id: 'restaurant1-id',
+    name: 'Test Restaurant',
+    slug: slug('Test Restaurant'),
+    menus: [],
   };
 
   beforeEach(async () => {
-    restaurantsServiceMock = {
+    restaurantRepositoryMock = {
       create: vitest.fn(),
       findAll: vitest.fn(),
       findOne: vitest.fn(),
@@ -30,29 +34,24 @@ describe('RestaurantsController', () => {
       remove: vitest.fn(),
     };
 
-    queryMapperMock = {
-      toOptions: vitest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [RestaurantsController],
       providers: [
+        RestaurantsService,
         {
-          provide: RestaurantsService,
-          useValue: restaurantsServiceMock,
-        },
-        {
-          provide: RestaurantQueryMapper,
-          useValue: queryMapperMock,
+          provide: RestaurantRepository,
+          useValue: restaurantRepositoryMock,
         },
       ],
     }).compile();
 
-    controller = module.get<RestaurantsController>(RestaurantsController);
+    service = module.get<RestaurantsService>(RestaurantsService);
+
+    restaurantRepository =
+      module.get<RestaurantRepository>(RestaurantRepository);
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(service).toBeDefined();
   });
 
   describe('create', () => {
@@ -61,81 +60,22 @@ describe('RestaurantsController', () => {
         name: 'Test Restaurant',
       };
 
-      const restaurant = {
-        id: 'r-1',
+      restaurantRepositoryMock.create.mockResolvedValue(restaurant);
+
+      const result = await service.create(dto);
+
+      expect(restaurantRepositoryMock.create).toHaveBeenCalledExactlyOnceWith({
         name: dto.name,
         slug: slug(dto.name),
-      };
-
-      restaurantsServiceMock.create.mockResolvedValue(restaurant);
-
-      const result = await controller.create(dto);
-
-      expect(restaurantsServiceMock.create).toHaveBeenCalledExactlyOnceWith(
-        dto,
-      );
+        menus: [],
+      });
 
       expect(result).toEqual(restaurant);
     });
   });
 
   describe('findAll', () => {
-    it('should map query and return restaurants', async () => {
-      const query = {
-        page: 2,
-        limit: 10,
-        sort: 'name:DESC',
-        filter: {
-          name: {
-            like: 'Garden',
-          },
-        },
-      };
-
-      const options = {
-        pagination: {
-          page: 2,
-          limit: 10,
-        },
-        sorting: {
-          name: 'DESC',
-        },
-        filter: {
-          name: [
-            {
-              operator: 'like',
-              value: 'Garden',
-            },
-          ],
-        },
-      };
-
-      const data = {
-        data: [],
-        page: 2,
-        limit: 10,
-        pages: 0,
-        total: 0,
-        hasNext: false,
-      };
-
-      queryMapperMock.toOptions.mockReturnValue(options);
-      restaurantsServiceMock.findAll.mockResolvedValue(data);
-
-      const result = await controller.findAll(query);
-
-      expect(queryMapperMock.toOptions).toHaveBeenCalledExactlyOnceWith(query);
-
-      expect(restaurantsServiceMock.findAll).toHaveBeenCalledExactlyOnceWith(
-        options,
-      );
-
-      expect(result).toEqual(data);
-    });
-
-    it('should use mapped default options when query is empty', async () => {
-      const query = {};
-
+    it('should return restaurants', async () => {
       const options = {
         pagination: {
           page: 1,
@@ -144,23 +84,41 @@ describe('RestaurantsController', () => {
       };
 
       const data = {
-        data: [],
+        data: [restaurant],
         page: 1,
         limit: 20,
-        pages: 0,
-        total: 0,
+        pages: 1,
+        total: 1,
         hasNext: false,
       };
 
-      queryMapperMock.toOptions.mockReturnValue(options);
-      restaurantsServiceMock.findAll.mockResolvedValue(data);
+      restaurantRepositoryMock.findAll.mockResolvedValue(data);
 
-      const result = await controller.findAll(query);
+      const result = await service.findAll(options);
 
-      expect(queryMapperMock.toOptions).toHaveBeenCalledExactlyOnceWith(query);
-
-      expect(restaurantsServiceMock.findAll).toHaveBeenCalledExactlyOnceWith(
+      expect(restaurantRepositoryMock.findAll).toHaveBeenCalledExactlyOnceWith(
         options,
+      );
+
+      expect(result).toEqual(data);
+    });
+
+    it('should return restaurants without options', async () => {
+      const data = {
+        data: [restaurant],
+        page: 1,
+        limit: 20,
+        pages: 1,
+        total: 1,
+        hasNext: false,
+      };
+
+      restaurantRepositoryMock.findAll.mockResolvedValue(data);
+
+      const result = await service.findAll();
+
+      expect(restaurantRepositoryMock.findAll).toHaveBeenCalledExactlyOnceWith(
+        undefined,
       );
 
       expect(result).toEqual(data);
@@ -169,66 +127,161 @@ describe('RestaurantsController', () => {
 
   describe('findOne', () => {
     it('should return a restaurant by id', async () => {
-      const data = {
-        id: 'r-1',
-        name: 'Test Restaurant',
-        slug: slug('Test Restaurant'),
-      };
+      restaurantRepositoryMock.findOne.mockResolvedValue(restaurant);
 
-      restaurantsServiceMock.findOne.mockResolvedValue(data);
+      const result = await service.findOne(restaurant.id);
 
-      const result = await controller.findOne('r-1');
-
-      expect(restaurantsServiceMock.findOne).toHaveBeenCalledExactlyOnceWith(
-        'r-1',
+      expect(restaurantRepositoryMock.findOne).toHaveBeenCalledExactlyOnceWith(
+        restaurant.id,
+        undefined,
       );
 
-      expect(result).toEqual(data);
+      expect(result).toEqual(restaurant);
+    });
+
+    it('should return a restaurant by id with options', async () => {
+      restaurantRepositoryMock.findOne.mockResolvedValue(restaurant);
+
+      const result = await service.findOne(restaurant.id, {
+        sorting: { created_at: 'ASC' },
+      });
+
+      expect(restaurantRepositoryMock.findOne).toHaveBeenCalledExactlyOnceWith(
+        restaurant.id,
+        { sorting: { created_at: 'ASC' } },
+      );
+
+      expect(result).toEqual(restaurant);
+    });
+
+    it("should throw NotFoundException when restaurant doesn't exist", async () => {
+      restaurantRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne(restaurant.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(restaurantRepositoryMock.findOne).toHaveBeenCalledExactlyOnceWith(
+        restaurant.id,
+        undefined,
+      );
     });
   });
 
   describe('update', () => {
-    it('should update a restaurant', async () => {
+    it('should update a restaurant with name', async () => {
       const updateDto = {
         name: 'Updated Restaurant',
       };
 
       const updatedRestaurant = {
-        id: 'r-1',
+        ...restaurant,
         name: updateDto.name,
         slug: slug(updateDto.name),
       };
 
-      restaurantsServiceMock.update.mockResolvedValue(updatedRestaurant);
+      restaurantRepositoryMock.update.mockResolvedValue(updatedRestaurant);
 
-      const result = await controller.update('r-1', updateDto);
+      const result = await service.update(restaurant.id, updateDto);
 
-      expect(restaurantsServiceMock.update).toHaveBeenCalledExactlyOnceWith(
-        'r-1',
-        updateDto,
+      expect(restaurantRepositoryMock.update).toHaveBeenCalledExactlyOnceWith(
+        {
+          id: [
+            {
+              operator: 'eq',
+              value: restaurant.id,
+            },
+          ],
+        },
+        {
+          name: updateDto.name,
+          slug: slug(updateDto.name),
+        },
       );
 
       expect(result).toEqual(updatedRestaurant);
+    });
+
+    it('should update a restaurant without changing slug when name is not provided', async () => {
+      const updateDto = {};
+
+      const updatedRestaurant = {
+        ...restaurant,
+      };
+
+      restaurantRepositoryMock.update.mockResolvedValue(updatedRestaurant);
+
+      const result = await service.update(restaurant.id, updateDto);
+
+      expect(restaurantRepositoryMock.update).toHaveBeenCalledExactlyOnceWith(
+        {
+          id: [
+            {
+              operator: 'eq',
+              value: restaurant.id,
+            },
+          ],
+        },
+        {
+          name: undefined,
+        },
+      );
+
+      expect(result).toEqual(updatedRestaurant);
+    });
+
+    it("should throw NotFoundException when restaurant doesn't exist", async () => {
+      const updateDto = {
+        name: 'Updated Restaurant',
+      };
+
+      restaurantRepositoryMock.update.mockResolvedValue(null);
+
+      await expect(service.update(restaurant.id, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      await expect(service.update(restaurant.id, updateDto)).rejects.toThrow(
+        `Restaurant with id ${restaurant.id} not found`,
+      );
+
+      expect(restaurantRepositoryMock.update).toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
     it('should remove a restaurant', async () => {
-      const restaurant = {
-        id: 'r-1',
-        name: 'Test Restaurant',
-        slug: slug('Test Restaurant'),
-      };
+      restaurantRepositoryMock.remove.mockResolvedValue(restaurant);
 
-      restaurantsServiceMock.remove.mockResolvedValue(restaurant);
+      const result = await service.remove(restaurant.id);
 
-      const result = await controller.remove('r-1');
-
-      expect(restaurantsServiceMock.remove).toHaveBeenCalledExactlyOnceWith(
-        'r-1',
-      );
+      expect(restaurantRepositoryMock.remove).toHaveBeenCalledExactlyOnceWith({
+        id: [
+          {
+            operator: 'eq',
+            value: restaurant.id,
+          },
+        ],
+      });
 
       expect(result).toEqual(restaurant);
+    });
+
+    it("should throw NotFoundException when restaurant doesn't exist", async () => {
+      restaurantRepositoryMock.remove.mockResolvedValue(null);
+
+      await expect(service.remove(restaurant.id)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(restaurantRepositoryMock.remove).toHaveBeenCalledExactlyOnceWith({
+        id: [
+          {
+            operator: 'eq',
+            value: restaurant.id,
+          },
+        ],
+      });
     });
   });
 });

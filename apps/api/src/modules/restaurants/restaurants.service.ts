@@ -14,13 +14,13 @@ export class RestaurantsService {
     return this.restaurantRepository.create({
       name,
       slug: slug(name),
+      menus: [],
     });
   }
 
   async findAll(
     options?: QueryOptions<RestaurantEntity>,
   ): Promise<QueryResult<RestaurantEntity>> {
-    console.log('23:', options?.filter?.name);
     return this.restaurantRepository.findAll(options);
   }
 
@@ -30,7 +30,7 @@ export class RestaurantsService {
   ): Promise<RestaurantEntity> {
     const restaurant = await this.restaurantRepository.findOne(id, options);
     if (!restaurant) {
-      throw new NotFoundException();
+      throw new NotFoundException(`Restaurant with id ${id} not found`);
     }
     return restaurant;
   }
